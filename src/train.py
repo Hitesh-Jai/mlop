@@ -84,3 +84,11 @@ y_pred = pipeline.predict(X_test)
 print("Accuracy:", accuracy_score(y_test, y_pred))
 print("\nClassification Report:\n")
 print(classification_report(y_test, y_pred))
+
+
+import joblib
+
+MODEL_DIR = BASE_DIR / "model"
+MODEL_DIR.mkdir(exist_ok=True)
+
+joblib.dump(pipeline, MODEL_DIR / "loan_model.joblib")
