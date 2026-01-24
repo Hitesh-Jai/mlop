@@ -5,8 +5,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, accuracy_score
+
+from skopt import BayesSearchCV
+from skopt.space import Integer, Real
 
 # -------------------------
 # Load data
@@ -52,7 +55,7 @@ preprocessor = ColumnTransformer(
 # -------------------------
 # Model
 # -------------------------
-model = LogisticRegression(max_iter=1000)
+model = RandomForestClassifier(random_state=42)
 
 # -------------------------
 # Pipeline
@@ -65,11 +68,55 @@ pipeline = Pipeline(
 )
 
 # -------------------------
+# Bayesian search space
+# -------------------------
+search_space = {
+    "classifier__n_estimators": Integer(100, 500),
+    "classifier__max_depth": Integer(3, 20),
+    "classifier__min_samples_split": Integer(2, 20),
+    "classifier__min_samples_leaf": Integer(1, 10),
+    "classifier__max_features": Real(0.3, 1.0)
+}
+
+
+# -------------------------
+# Bayesian Search
+# -------------------------
+bayes_search = BayesSearchCV(
+    estimator=pipeline,
+    search_spaces=search_space,
+    n_iter=30,              # number of intelligent trials
+    cv=5,
+    scoring="accuracy",
+    random_state=42,
+    n_jobs=-1
+)
+
+
+# -------------------------
 # Train-test split
 # -------------------------
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=42, stratify=y
 )
+
+
+# -------------------------
+# Fit Bayesian search
+# -------------------------
+bayes_search.fit(X_train, y_train)
+
+# -------------------------
+# Results
+# -------------------------
+best_model = bayes_search.best_estimator_
+
+print("Best parameters:")
+print(bayes_search.best_params_)
+
+y_pred = best_model.predict(X_test)
+print("Test Accuracy:", accuracy_score(y_test, y_pred))
+
 
 # -------------------------
 # Train
